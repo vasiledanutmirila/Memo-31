@@ -7,9 +7,8 @@ import sqlite3
 
 
 class MainWindow(QMainWindow):
-    shopList = []
-
     def __init__(self):
+        self.shopList = []
         self.dbConnection = sqlite3.connect("memo.db")
         self.dbCursor = self.dbConnection.cursor()
         super(MainWindow, self).__init__()
@@ -20,8 +19,9 @@ class MainWindow(QMainWindow):
         self.setGeometry(200, 200, 1080, 720)
 
         vbox = QVBoxLayout()
-        createTextButton(self, vbox)
-        createShopButton(self, vbox)
+        createButton("Text", 14, self.textButtonAction, vbox, 150, 50, Qt.AlignCenter)
+        createButton("Lista de cumparaturi", 14, self.shopListButtonAction, vbox, 250, 50, Qt.AlignCenter)
+        createButton("Istoric", 14, self.historyButtonAction, vbox, 200, 50, Qt.AlignCenter)
 
         widget = QWidget()
         widget.setLayout(vbox)
@@ -108,38 +108,58 @@ class MainWindow(QMainWindow):
             self.shopList = []
         self.shopListButtonAction()
 
+    def historyButtonAction(self):
+        vbox = QVBoxLayout()
+        createLabel("Istoric", 14, vbox, Qt.AlignHCenter)
+
+        formLayout = QFormLayout()
+        groupBox = QGroupBox()
+        scroll = QScrollArea()
+
+        for row in self.dbCursor.execute('SELECT * FROM history'):
+            createLabel(row[0], 16, formLayout, Qt.AlignLeft)
+            if row[0] == "TEXT":
+                createLabel(row[1], 12, formLayout, Qt.AlignLeft)
+            if row[0] == "LISTA DE CUMPARATURI":
+                shopListItems = row[1].split(",")
+                for item in shopListItems:
+                    createLabel(item, 12, formLayout, Qt.AlignLeft)
+
+        groupBox.setLayout(formLayout)
+        scroll.setWidget(groupBox)
+        scroll.setWidgetResizable(True)
+        vbox.addWidget(scroll)
+
+        createButton("Inapoi", 12, self.backButtonAction, vbox)
+
+        widget = QWidget()
+        widget.setLayout(vbox)
+        self.setCentralWidget(widget)
+
     def closeEvent(self, *args, **kwargs):
         super(QMainWindow, self).closeEvent(*args, **kwargs)
         self.dbConnection.close()
 
 
-def createButton(name, size, action, parent):
+def createButton(name, size, action, parent, width=0, height=0, align=0):
     button = QPushButton(name)
     button.setFont(QFont("Arial", size))
+    if width != 0 and height != 0:
+        button.setFixedSize(width, height)
     button.clicked.connect(action)
-    parent.addWidget(button)
-
-
-def createTextButton(window, vbox):
-    textButton = QPushButton("Text")
-    textButton.setFont(QFont("Arial", 14))
-    textButton.setFixedSize(150, 50)
-    textButton.clicked.connect(window.textButtonAction)
-    vbox.addWidget(textButton, alignment=Qt.AlignCenter)
-
-
-def createShopButton(window, vbox):
-    shopButton = QPushButton("Lista cumparaturi")
-    shopButton.setFont(QFont("Arial", 14))
-    shopButton.setFixedSize(250, 50)
-    shopButton.clicked.connect(window.shopListButtonAction)
-    vbox.addWidget(shopButton, alignment=Qt.AlignCenter)
+    if align == 0:
+        parent.addWidget(button)
+    else:
+        parent.addWidget(button, alignment=align)
 
 
 def createLabel(name, size, parent, align):
     label = QLabel(name)
     label.setFont(QFont("Arial", size))
-    parent.addWidget(label, alignment=align)
+    if isinstance(parent, QVBoxLayout):
+        parent.addWidget(label, alignment=align)
+    if isinstance(parent, QFormLayout):
+        parent.addRow(label)
 
 
 app = QApplication(sys.argv)
