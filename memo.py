@@ -3,12 +3,15 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QApplication, QMainWindow, QLabel, \
     QLineEdit, QTextEdit, QScrollArea, QFormLayout, QGroupBox
 import sys
+import sqlite3
 
 
 class MainWindow(QMainWindow):
     shopList = []
 
     def __init__(self):
+        self.dbConnection = sqlite3.connect("memo.db")
+        self.dbCursor = self.dbConnection.cursor()
         super(MainWindow, self).__init__()
         self.initialWindow()
 
@@ -33,7 +36,7 @@ class MainWindow(QMainWindow):
 
         bottomBox = QHBoxLayout()
         createButton("Inapoi", 12, self.backButtonAction, bottomBox)
-        createButton("Salveaza", 12, self.saveButtonAction, bottomBox)
+        createButton("Salveaza", 12, self.textSaveButtonAction, bottomBox)
 
         vbox.addLayout(bottomBox)
 
@@ -73,7 +76,7 @@ class MainWindow(QMainWindow):
 
         bottomBox = QHBoxLayout()
         createButton("Inapoi", 12, self.backButtonAction, bottomBox)
-        createButton("Salveaza", 12, self.saveButtonAction, bottomBox)
+        createButton("Salveaza", 12, self.shopListSaveButtonAction, bottomBox)
 
         vbox.addLayout(bottomBox)
 
@@ -88,8 +91,26 @@ class MainWindow(QMainWindow):
             self.shopList.append(self.itemInputText.text())
         self.shopListButtonAction()
 
-    def saveButtonAction(self):
-        print("save button pressed")
+    def textSaveButtonAction(self):
+        data = self.text.toPlainText()
+        if len(data) != 0:
+            print(data)
+            self.dbCursor.execute("insert into history values (?, ?)", ("TEXT", data))
+            self.dbConnection.commit()
+        self.textButtonAction()
+
+    def shopListSaveButtonAction(self):
+        if len(self.shopList) != 0:
+            data = ",".join(self.shopList)
+            print(data)
+            self.dbCursor.execute("insert into history values (?, ?)", ("LISTA DE CUMPARATURI", data))
+            self.dbConnection.commit()
+            self.shopList = []
+        self.shopListButtonAction()
+
+    def closeEvent(self, *args, **kwargs):
+        super(QMainWindow, self).closeEvent(*args, **kwargs)
+        self.dbConnection.close()
 
 
 def createButton(name, size, action, parent):
