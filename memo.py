@@ -1,13 +1,12 @@
-from PyQt5 import QtWidgets
-from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QApplication, QMainWindow, QLabel, \
-    QLineEdit, QTextEdit
+    QLineEdit, QTextEdit, QScrollArea, QFormLayout, QGroupBox
 import sys
 
 
 class MainWindow(QMainWindow):
+    shopList = []
 
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -18,56 +17,108 @@ class MainWindow(QMainWindow):
         self.setGeometry(200, 200, 1080, 720)
 
         vbox = QVBoxLayout()
-        textButton = QPushButton("Text")
-        textButton.setFont(QFont("Arial", 14))
-        textButton.setFixedSize(150, 50)
-        textButton.clicked.connect(self.textButtonAction)
-
-        shopButton = QPushButton("Lista cumparaturi")
-        shopButton.setFont(QFont("Arial", 14))
-        shopButton.setFixedSize(250, 50)
-
-        vbox.addWidget(textButton, alignment=Qt.AlignCenter)
-        vbox.addWidget(shopButton, alignment=Qt.AlignCenter)
+        createTextButton(self, vbox)
+        createShopButton(self, vbox)
 
         widget = QWidget()
         widget.setLayout(vbox)
         self.setCentralWidget(widget)
 
     def textButtonAction(self):
-        print("text button pressed")
         vbox = QVBoxLayout()
-        label = QLabel("TEXT", self)
-        label.setFont(QFont("Arial", 14))
-        labelBox = QVBoxLayout()
-        labelBox.addWidget(label, alignment=Qt.AlignHCenter)
-        vbox.addLayout(labelBox)
+        createLabel("TEXT", 14, vbox, Qt.AlignHCenter)
 
-        text = QTextEdit()
-        textBox = QVBoxLayout()
-        textBox.addWidget(text)
-
-        vbox.addLayout(textBox)
+        self.text = QTextEdit()
+        vbox.addWidget(self.text)
 
         bottomBox = QHBoxLayout()
-        backButton = QPushButton("Inapoi")
-        backButton.setFont(QFont("Arial", 12))
-        backButton.clicked.connect(self.backButtonAction)
-        bottomBox.addWidget(backButton)
-
-        saveButton = QPushButton("Salveaza")
-        saveButton.setFont(QFont("Arial", 12))
-        bottomBox.addWidget(saveButton)
+        createButton("Inapoi", 12, self.backButtonAction, bottomBox)
+        createButton("Salveaza", 12, self.saveButtonAction, bottomBox)
 
         vbox.addLayout(bottomBox)
 
         widget = QWidget()
         widget.setLayout(vbox)
         self.setCentralWidget(widget)
+        self.text.setFocus()
 
     def backButtonAction(self):
-        print("back button pressed")
+        self.shopList = []
         self.initialWindow()
+
+    def shopListButtonAction(self):
+        vbox = QVBoxLayout()
+        createLabel("LISTA DE CUMPARATURI", 14, vbox, Qt.AlignHCenter)
+
+        formLayout = QFormLayout()
+        groupBox = QGroupBox()
+        scroll = QScrollArea()
+
+        for item in self.shopList:
+            itemLabel = QLabel(item)
+            formLayout.addRow(itemLabel)
+
+        self.itemInputText = QLineEdit()
+        formLayout.addRow(self.itemInputText)
+
+        createButton("+", 12, self.plusButtonAction, formLayout)
+        groupBox.setLayout(formLayout)
+
+        scroll.setWidget(groupBox)
+        scroll.setWidgetResizable(True)
+
+        vbox.addWidget(scroll)
+        vbar = scroll.verticalScrollBar()
+        vbar.setValue(vbar.maximum())
+
+        bottomBox = QHBoxLayout()
+        createButton("Inapoi", 12, self.backButtonAction, bottomBox)
+        createButton("Salveaza", 12, self.saveButtonAction, bottomBox)
+
+        vbox.addLayout(bottomBox)
+
+        widget = QWidget()
+        widget.setLayout(vbox)
+        self.setCentralWidget(widget)
+        self.itemInputText.setFocus()
+
+    def plusButtonAction(self):
+        print(self.itemInputText.text())
+        if self.itemInputText.text() != "":
+            self.shopList.append(self.itemInputText.text())
+        self.shopListButtonAction()
+
+    def saveButtonAction(self):
+        print("save button pressed")
+
+
+def createButton(name, size, action, parent):
+    button = QPushButton(name)
+    button.setFont(QFont("Arial", size))
+    button.clicked.connect(action)
+    parent.addWidget(button)
+
+
+def createTextButton(window, vbox):
+    textButton = QPushButton("Text")
+    textButton.setFont(QFont("Arial", 14))
+    textButton.setFixedSize(150, 50)
+    textButton.clicked.connect(window.textButtonAction)
+    vbox.addWidget(textButton, alignment=Qt.AlignCenter)
+
+
+def createShopButton(window, vbox):
+    shopButton = QPushButton("Lista cumparaturi")
+    shopButton.setFont(QFont("Arial", 14))
+    shopButton.setFixedSize(250, 50)
+    shopButton.clicked.connect(window.shopListButtonAction)
+    vbox.addWidget(shopButton, alignment=Qt.AlignCenter)
+
+
+def createLabel(name, size, parent, align):
+    label = QLabel(name)
+    label.setFont(QFont("Arial", size))
+    parent.addWidget(label, alignment=align)
 
 
 app = QApplication(sys.argv)
